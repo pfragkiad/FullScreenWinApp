@@ -29,6 +29,16 @@ namespace FullScreenWinApp
 
         private string? _rotationCachePath;
 
+        private List<string> _imageFiles =new ();
+        int currentIndex = -1;
+
+        public void SetDirectory(string directoryName)
+        {
+            _imageFiles = Directory.GetFiles(directoryName, "*.jpg").ToList();
+            currentIndex = -1;
+            ProceedNext();
+        }
+
         public void SetImage(string filePath)
         {
             _currentPath = filePath;
@@ -62,7 +72,7 @@ namespace FullScreenWinApp
         }
 
         //cached rotation!
-        List<RotateFlipType> _actions;
+        List<RotateFlipType> _actions = [];
 
         private void PreviewForm_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
@@ -173,8 +183,21 @@ namespace FullScreenWinApp
             else if (e.Delta < 0) ProceedNext(); //down (-120)
         }
 
-        private void ProceedNext() { MessageBox.Show("Next"); }
+        private void ProceedNext() {
+            if (_actions.Count > 0) SaveCachedActions();
+            
+            currentIndex++;
+            if (currentIndex == _imageFiles.Count) currentIndex = 0;
+            SetImage(_imageFiles[currentIndex]);
+        }
 
-        private void ProceedPrevious() { MessageBox.Show("Previous"); }
+        private void ProceedPrevious() {
+            if (_actions.Count > 0) SaveCachedActions();
+
+            currentIndex--;
+            if (currentIndex == -1) currentIndex = _imageFiles.Count - 1;
+            SetImage(_imageFiles[currentIndex]);
+        
+        }
     }
 }

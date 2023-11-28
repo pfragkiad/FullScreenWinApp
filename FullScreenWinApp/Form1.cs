@@ -12,7 +12,8 @@ namespace FullScreenWinApp
         private void button1_Click(object sender, EventArgs e)
         {
             PreviewForm form = new PreviewForm();
-            form.SetImage(@"D:\temp\ai\399464388_237794612649174_8038027137018639542_n.jpg");
+            //form.SetImage(@"D:\temp\ai\399464388_237794612649174_8038027137018639542_n.jpg");
+            form.SetDirectory(@"D:\temp\ai\rated");
             form.ShowDialog();
         }
     }

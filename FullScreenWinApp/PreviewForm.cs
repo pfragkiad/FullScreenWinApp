@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -14,13 +15,21 @@ namespace FullScreenWinApp
     public partial class PreviewForm : Form
     {
 
-        public PreviewForm()
+        public PreviewForm(IConfiguration configuration)
         {
             InitializeComponent();
 
             DoubleBuffered = true;
-        }
+            
+            _configuration = configuration;
 
+            string? initialDirectory = _configuration["browser:initialDirectory"];
+            if (!string.IsNullOrWhiteSpace(initialDirectory) && Directory.Exists(initialDirectory))
+                SetDirectory(initialDirectory!);
+
+        }
+        //TODO: Add zoom (remember it too)
+        //TODO: Cache directory in settings
 
         //https://www.codeproject.com/Articles/21097/PictureBox-Zoom
 
@@ -34,7 +43,7 @@ namespace FullScreenWinApp
 
         public void SetDirectory(string directoryName)
         {
-            _imageFiles = Directory.GetFiles(directoryName, "*.jpg").ToList();
+            _imageFiles = [.. Directory.GetFiles(directoryName, "*.jpg")];
             currentIndex = -1;
             ProceedNext();
         }
@@ -73,6 +82,7 @@ namespace FullScreenWinApp
 
         //cached rotation!
         List<RotateFlipType> _actions = [];
+        private readonly IConfiguration _configuration;
 
         private void PreviewForm_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
@@ -178,7 +188,7 @@ namespace FullScreenWinApp
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
-        {
+        { 
             if (e.Delta > 0) ProceedPrevious(); //up (+120)
             else if (e.Delta < 0) ProceedNext(); //down (-120)
         }

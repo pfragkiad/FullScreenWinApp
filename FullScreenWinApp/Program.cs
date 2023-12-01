@@ -18,7 +18,7 @@ namespace FullScreenWinApp
             _host = Host.CreateDefaultBuilder().ConfigureServices( (context, services) =>
             {
                 services.AddSingleton<PreviewForm>();
-
+                
 
             }).Build();
 

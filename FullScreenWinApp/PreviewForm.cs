@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using ImagesAdvanced;
 namespace FullScreenWinApp
 {
     public partial class PreviewForm : Form
@@ -28,6 +29,8 @@ namespace FullScreenWinApp
                 SetDirectory(initialDirectory!);
 
         }
+        List<string> extensions = new();
+
         //TODO: Add zoom (remember it too)
         //TODO: Cache directory in settings
 
@@ -35,16 +38,23 @@ namespace FullScreenWinApp
 
         private Image? _image = null;
         private string? _currentPath = null;
-
         private string? _rotationCachePath;
 
         private List<string> _imageFiles =new ();
-        int currentIndex = -1;
+        private int _currentIndex = -1;
 
         public void SetDirectory(string directoryName)
         {
-            _imageFiles = [.. Directory.GetFiles(directoryName, "*.jpg")];
-            currentIndex = -1;
+            var extensions = _configuration.GetSection("browser:extensions").GetChildren().Select(c=> c.Value).ToList();
+           
+            //todo: read image extensions from config file
+            _imageFiles = Directory
+                .GetFiles(directoryName, "*.*")
+                .Where(f=>extensions.Contains(Path.GetExtension(f),StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            //_imageFiles = Directory.GetFiles(directoryName).Where(ImageExtensions.IsImageFile).ToList();
+            _currentIndex = -1;
             ProceedNext();
         }
 
@@ -61,23 +71,16 @@ namespace FullScreenWinApp
                 return;
             }
 
-            var records = File
-                .ReadAllLines(_rotationCachePath)
-                .FirstOrDefault(l => l.Split('\t')[0] == Path.GetFileName(_currentPath))?
-                .Split('\t')[1]
-                .Split('-')
-                .Select(s => Enum.Parse<RotateFlipType>(s))
-                .ToList();
+            var record = RotationCacheFileRecord.ReadFromFile(_rotationCachePath, Path.GetFileName(_currentPath));
 
-            if (records is null)
+            if (record is null)
             {
                 _actions = new();
                 return;
             }
 
-            _actions = records!;
-            foreach (var a in _actions)
-                _image.RotateFlip(a);
+            _actions = record.Rotations;
+            _image.ApplyAllRotations(_actions);
         }
 
         //cached rotation!
@@ -122,70 +125,9 @@ namespace FullScreenWinApp
             }
         }
 
-        public void SaveCachedActions()
-        {
-
-            if (_actions.Count == 0) return;
-
-            //simplify actions
-            //remove 2 consecutive RotateNoneFlipY/RotateNoneFlipX
-            for (int i = _actions.Count - 1; i >= 1; i--)
-            {
-                if (_actions[i] == RotateFlipType.RotateNoneFlipX && _actions[i - 1] == RotateFlipType.RotateNoneFlipX
-                    || _actions[i] == RotateFlipType.RotateNoneFlipY && _actions[i - 1] == RotateFlipType.RotateNoneFlipY)
-                {
-                    _actions.RemoveAt(i);
-                    _actions.RemoveAt(i - 1);
-                    i--;
-                }
-            }
-
-            //remove 4 consecutive Rotate90FlipNone/Rotate270FlipNone
-            for (int i = _actions.Count - 1; i >= 3; i--)
-            {
-                if (_actions[i] == RotateFlipType.Rotate90FlipNone && _actions[i - 1] == RotateFlipType.Rotate90FlipNone
-                    && _actions[i - 2] == RotateFlipType.Rotate90FlipNone && _actions[i - 3] == RotateFlipType.Rotate90FlipNone
-                    || _actions[i] == RotateFlipType.Rotate270FlipNone && _actions[i - 1] == RotateFlipType.Rotate270FlipNone
-                    && _actions[i - 2] == RotateFlipType.Rotate270FlipNone && _actions[i - 3] == RotateFlipType.Rotate270FlipNone)
-                {
-                    _actions.RemoveAt(i);
-                    _actions.RemoveAt(i - 1);
-                    _actions.RemoveAt(i - 2);
-                    _actions.RemoveAt(i - 3);
-                    i -= 3;
-                }
-            }
-
-            //remove pairs of Rotate90FlipNone/Rotate270FlipNone or Rotate270FlipNone/Rotate90FlipNone
-            for (int i = _actions.Count - 1; i >= 1; i--)
-            {
-                if (_actions[i] == RotateFlipType.Rotate90FlipNone && _actions[i - 1] == RotateFlipType.Rotate270FlipNone
-                    || _actions[i] == RotateFlipType.Rotate270FlipNone && _actions[i - 1] == RotateFlipType.Rotate90FlipNone)
-                {
-                    _actions.RemoveAt(i);
-                    _actions.RemoveAt(i - 1);
-                    i--;
-                }
-            }
-
-            if (_actions.Count == 0) return;
-
-            string actions = string.Join("-", _actions);
-
-            var records = File.Exists(_rotationCachePath) ?
-                File
-               .ReadAllLines(_rotationCachePath)
-               .Where(l => l.Split('\t')[0] != Path.GetFileName(_currentPath)) : [];
-
-            //rewrite all recrods except the current one
-            if (records.Any())
-                File.WriteAllLines(_rotationCachePath, records);
-            else
-                File.Delete(_rotationCachePath);
-
-            //append the current path
-            File.AppendAllText(_rotationCachePath, $"{Path.GetFileName(_currentPath)}\t{actions}\r\n");
-        }
+        public void SaveCachedActions() =>
+            _actions.AppendRotationsActionsToCacheFile(_currentPath, _rotationCachePath);
+        
 
         protected override void OnMouseWheel(MouseEventArgs e)
         { 
@@ -194,19 +136,23 @@ namespace FullScreenWinApp
         }
 
         private void ProceedNext() {
+            if (_imageFiles.Count == 0) return;
             if (_actions.Count > 0) SaveCachedActions();
             
-            currentIndex++;
-            if (currentIndex == _imageFiles.Count) currentIndex = 0;
-            SetImage(_imageFiles[currentIndex]);
+            _currentIndex++;
+            if (_currentIndex == _imageFiles.Count) _currentIndex = 0;
+
+
+            SetImage(_imageFiles[_currentIndex]);
         }
 
         private void ProceedPrevious() {
+            if (_imageFiles.Count == 0) return;
             if (_actions.Count > 0) SaveCachedActions();
 
-            currentIndex--;
-            if (currentIndex == -1) currentIndex = _imageFiles.Count - 1;
-            SetImage(_imageFiles[currentIndex]);
+            _currentIndex--;
+            if (_currentIndex == -1) _currentIndex = _imageFiles.Count - 1;
+            SetImage(_imageFiles[_currentIndex]);
         
         }
     }

@@ -17,21 +17,25 @@ namespace FullScreenWinApp
     {
         private readonly BrowserWithRotationCache _browser;
 
+
         public PreviewForm(BrowserWithRotationCache browser)
         {
             InitializeComponent();
 
             DoubleBuffered = true;
-            
+
             _browser = browser;
             _browser.ImageChanged += (o, e) => BackgroundImage = (Image)_browser.CurrentImage?.Clone(); ;
-  
+
             BackgroundImage = (Image)_browser.CurrentImage?.Clone();
         }
 
         //TODO: Add zoom (remember it too)
         //TODO: Remember modified time
-        ////https://www.codeproject.com/Articles/21097/PictureBox-Zoom
+        //TODO: FIX CACHE STORAGE --
+        //https://www.codeproject.com/Articles/21097/PictureBox-Zoom
+        //https://social.msdn.microsoft.com/Forums/en-US/0ae1b84f-f114-43c1-a560-a1a4588c1eca/picturebox-fullscreen-display?forum=winforms
+
 
         private void PreviewForm_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
@@ -63,7 +67,7 @@ namespace FullScreenWinApp
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
-        { 
+        {
             if (e.Delta > 0) _browser.ProceedPrevious(); //up (+120)
             else if (e.Delta < 0) _browser.ProceedNext(); //down (-120)
         }

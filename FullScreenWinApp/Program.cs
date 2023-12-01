@@ -1,3 +1,4 @@
+using ImagesAdvanced;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -17,7 +18,11 @@ namespace FullScreenWinApp
         {
             _host = Host.CreateDefaultBuilder().ConfigureServices( (context, services) =>
             {
-                services.AddSingleton<PreviewForm>();
+                services
+                .AddSingleton<PreviewForm>()
+                .AddSingleton<BrowserWithRotationCache>();
+
+                services.Configure<BrowserOptions>(context.Configuration.GetSection("browser"));
                 
 
             }).Build();

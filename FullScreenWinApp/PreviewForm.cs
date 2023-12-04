@@ -25,9 +25,9 @@ namespace FullScreenWinApp
             DoubleBuffered = true;
 
             _browser = browser;
-            _browser.ImageChanged += (o, e) => BackgroundImage = (Image)_browser.CurrentImage?.Clone(); ;
+            _browser.ImageChanged += (o, e) => BackgroundImage = new Bitmap(_browser.CurrentImage);
 
-            BackgroundImage = (Image)_browser.CurrentImage?.Clone();
+            _browser.ProceedNext();
         }
 
         //TODO: Add zoom (remember it too)
@@ -41,7 +41,7 @@ namespace FullScreenWinApp
         {
             switch (e.KeyCode)
             {
-                case Keys.Escape: _browser.SaveCachedActions(); Hide(); break;
+                case Keys.Escape: _browser.SaveCachedActions(); Close(); break;
                 case Keys.Left: _browser.ProceedPrevious(); break;
                 case Keys.Right: _browser.ProceedNext(); break;
 

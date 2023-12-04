@@ -11,7 +11,7 @@ public partial class PreviewForm : Form
         InitializeComponent();
 
         DoubleBuffered = true;
-        BackgroundImageLayout = ImageLayout.Center;
+        BackgroundImageLayout = ImageLayout.None;
 
         _browser = browser;
         _browser.ImageChanged += (o, e) =>
@@ -30,11 +30,11 @@ public partial class PreviewForm : Form
     {
         switch (e.KeyCode)
         {
-            case Keys.F5: _browser.Reload(proceedNext:true); break;
+            case Keys.F5: _browser.Reload(proceedNext: true); break;
 
             case Keys.Escape: _browser.SaveCachedActions(); Close(); break;
-            case Keys.Left: _browser.ProceedPrevious(); break;
-            case Keys.Right: _browser.ProceedNext(); break;
+            case Keys.Left: { _browser.ProceedPrevious();  break; }
+            case Keys.Right: { _browser.ProceedNext(); break; }
 
             case Keys.Up:
                 {   //ok
@@ -57,6 +57,35 @@ public partial class PreviewForm : Form
             case Keys.Add: _browser.Zoom(1); break;
             case Keys.Subtract: _browser.Zoom(-1); break;
 
+        }
+    }
+
+    bool _isPanning = false;
+    int _startX, _startY;
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left )
+        {
+            _isPanning = true;
+            _startX = e.X;
+            _startY = e.Y;
+        }
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+
+        if (e.Button == MouseButtons.Left)
+            _browser.Pan(_startX - e.X, _startY - e.Y);
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left)
+        {
+            _browser.Pan(_startX - e.X, _startY - e.Y);
+            _isPanning = false;
         }
     }
 

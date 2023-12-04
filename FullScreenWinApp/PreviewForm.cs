@@ -30,9 +30,8 @@ namespace FullScreenWinApp
             _browser.ProceedNext();
         }
 
-        //TODO: Add zoom (remember it too)
+        //TODO: Add zoom (remember it too?)
         //TODO: Remember modified time
-        //TODO: FIX CACHE STORAGE --
         //https://www.codeproject.com/Articles/21097/PictureBox-Zoom
         //https://social.msdn.microsoft.com/Forums/en-US/0ae1b84f-f114-43c1-a560-a1a4588c1eca/picturebox-fullscreen-display?forum=winforms
 
@@ -41,6 +40,8 @@ namespace FullScreenWinApp
         {
             switch (e.KeyCode)
             {
+                case Keys.F5: _browser.Reload(proceedNext:true); break;
+
                 case Keys.Escape: _browser.SaveCachedActions(); Close(); break;
                 case Keys.Left: _browser.ProceedPrevious(); break;
                 case Keys.Right: _browser.ProceedNext(); break;

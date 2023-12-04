@@ -35,7 +35,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Black;
-            BackgroundImageLayout = ImageLayout.Zoom;
+            BackgroundImageLayout = ImageLayout.None;
             ClientSize = new Size(800, 450);
             FormBorderStyle = FormBorderStyle.None;
             KeyPreview = true;
